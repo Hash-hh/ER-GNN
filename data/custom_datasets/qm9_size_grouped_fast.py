@@ -1,15 +1,10 @@
 import os
 import torch
-import h5py
 import pickle
-import random
 from collections import defaultdict
 from tqdm import tqdm
-from torch_geometric.data import Data, Dataset, Batch, InMemoryDataset
-from torch_geometric.loader import DataLoader
-from torch.utils.data.sampler import Sampler
+from torch_geometric.data import Data, InMemoryDataset
 from torch_geometric.data import download_url
-from functools import lru_cache
 
 
 class SizeGroupedQM9(InMemoryDataset):
@@ -24,7 +19,7 @@ class SizeGroupedQM9(InMemoryDataset):
     }
 
     def __init__(self, root, split='train', transform=None, pre_transform=None, force_process=False, debug=False):
-        assert split in ['train', 'valid', 'test']
+        assert split in ['train', 'valid', 'test'], f"Invalid split: {split}; must be 'train', 'valid', or 'test'."
         self.split = split
         self.force_process = force_process
         self.debug = debug
@@ -153,12 +148,12 @@ class SizeGroupedQM9(InMemoryDataset):
         """Load processed data and node counts."""
         self.data, self.slices = self.load_data_slices()
         node_counts_path = os.path.join(self.processed_dir, f'{self.split}_node_counts.pt')
-        self.node_counts = torch.load(node_counts_path)
+        self.node_counts = torch.load(node_counts_path)  # number of nodes in each graph, list of integers
 
         # Load matrix data
-        self.distance_mats = torch.load(os.path.join(self.processed_dir, f'{self.split}_distance_mats.pt'))
+        self.distance_mats = torch.load(os.path.join(self.processed_dir, f'{self.split}_distance_mats.pt'))  # distance tensor for each graph
         self.affinities = torch.load(os.path.join(self.processed_dir, f'{self.split}_affinities.pt'))
-        self.edge_features_list = torch.load(os.path.join(self.processed_dir, f'{self.split}_edge_features.pt'))
+        self.edge_features_list = torch.load(os.path.join(self.processed_dir, f'{self.split}_edge_features.pt'))  # list of edge features, [[n,n,4], [m,m,4], ...]
 
 
     def load_data_slices(self):
@@ -205,61 +200,4 @@ class SizeGroupedQM9(InMemoryDataset):
         return data
 
 
-class SameSizeBatchSampler(Sampler):
-    """Batch sampler that groups graphs of the same size together."""
 
-    def __init__(self, dataset, batch_size, shuffle=True):
-        self.dataset = dataset
-        self.batch_size = batch_size
-        self.shuffle = shuffle
-        self.batches = self._create_batches()
-
-    def _create_batches(self):
-        """Create batches of same-size graphs, including partial batches if needed."""
-        batches = []
-
-        # Process each size group
-        for size, indices in self.dataset.size_groups.items():
-            # Copy and shuffle indices within each size group
-            indices = indices.copy()
-            if self.shuffle:
-                random.shuffle(indices)
-
-            # Split indices into batches
-            for i in range(0, len(indices), self.batch_size):
-                batch = indices[i:i + self.batch_size]
-                # Add all batches, even if they are smaller than batch_size
-                if len(batch) > 1:  # <--- keeping it to 1, for legal batch normalization
-                    batches.append(batch)
-
-        return batches
-
-    def __iter__(self):
-        if self.shuffle:
-            random.shuffle(self.batches)
-        return iter(self.batches)
-
-    def __len__(self):
-        return len(self.batches)
-
-
-def collate_with_matrices(batch):
-    """Collate function that handles both PyG graphs and matrix data."""
-    batch_data = Batch.from_data_list(batch)
-    return batch_data
-
-
-def create_same_size_dataloader(dataset, batch_size, shuffle, num_workers=0):
-    """Create a dataloader that returns batches of same-size graphs."""
-    batch_sampler = SameSizeBatchSampler(
-        dataset=dataset,
-        batch_size=batch_size,
-        shuffle=shuffle
-    )
-
-    return DataLoader(
-        dataset=dataset,
-        batch_sampler=batch_sampler,
-        collate_fn=collate_with_matrices,
-        num_workers=num_workers
-    )

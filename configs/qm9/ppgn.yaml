@@ -2,7 +2,7 @@ fixed:
   dataset: qm9_pos
   log_path: './logs'
 
-  use_wandb: True
+  use_wandb: False
   wandb_project: "experiment"
   wandb_name: "ppgn"
 
@@ -21,7 +21,7 @@ fixed:
     sample_k2: 5   # edge deletion
     candid_pool: 100
     ensemble: 1
-    heuristic: longest_path
+    heuristic: longest_path  # TODO: all paths
     include_original_graph: True
 
   imle_configs:
@@ -54,5 +54,5 @@ fixed:
   min_epochs: 50
   max_epochs: 100
   data_path: './datasets'
-  debug: False
+  debug: True
   num_runs: 1

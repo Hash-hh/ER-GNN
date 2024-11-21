@@ -16,7 +16,9 @@ from torch_geometric.loader import DataLoader
 
 from data.custom_datasets.qm9 import QM9
 from data.custom_datasets.qm9_pos import QM9_pos
-from data.custom_datasets.qm9_size_grouped_fast import SizeGroupedQM9, create_same_size_dataloader
+from data.custom_datasets.zinc_size_grouped import SizeGroupedZINC
+from data.custom_datasets.qm9_size_grouped_fast import SizeGroupedQM9
+from data.custom_datasets.ppgn_data_loader_utils import create_same_size_dataloader
 from data.custom_datasets.tree_dataset import MyTreeDataset, MyLeafColorDataset
 from data.custom_datasets.planarsatpairsdataset import PlanarSATPairsDataset
 from data.custom_datasets.symmetries import MySymDataset
@@ -32,6 +34,7 @@ NUM_WORKERS = 0
 
 DATASET = (PygGraphPropPredDataset,
             ZINC,
+            SizeGroupedZINC,
             MyTreeDataset,
             MyLeafColorDataset,
             MySymDataset,
@@ -102,7 +105,7 @@ def get_data(args: Union[Namespace, ConfigDict], *_args):
     :param args:
     :return:
     """
-    assert args.downstream_model != 'PPGN' or args.dataset.lower() in ['qm9_pos'], "PPGN only supports QM9_pos dataset for now."
+    assert args.downstream_model != 'PPGN' or args.dataset.lower() in ['qm9_pos', 'zinc'], "PPGN only supports QM9_pos and ZINC dataset for now."
 
     if not os.path.isdir(args.data_path):
         os.mkdir(args.data_path)
@@ -145,21 +148,21 @@ def get_data(args: Union[Namespace, ConfigDict], *_args):
 
     if isinstance(train_set, list):
         train_loaders = [dataloader(t) for t in train_set]
-    elif isinstance(train_set, DATASET) or isinstance(train_set, SizeGroupedQM9):
+    elif isinstance(train_set, DATASET) or isinstance(train_set, SizeGroupedQM9) or isinstance(train_set, SizeGroupedZINC):
         train_loaders = [dataloader(train_set)]
     else:
         raise TypeError(f"Expected Dataset or list, got {type(train_set)} instead.")
 
     if isinstance(val_set, list):
         val_loaders = [dataloader(t) for t in val_set]
-    elif isinstance or isinstance(train_set, SizeGroupedQM9):
+    elif isinstance(val_set, DATASET) or isinstance(val_set, SizeGroupedQM9) or isinstance(val_set, SizeGroupedZINC):
         val_loaders = [dataloader(val_set)]
     else:
         raise TypeError(f"Expected Dataset or list, got {type(val_set)} instead.")
 
     if isinstance(test_set, list):
         test_loaders = [dataloader(t) for t in test_set]
-    elif isinstance or isinstance(train_set, SizeGroupedQM9):
+    elif isinstance(test_set, DATASET) or isinstance(train_set, SizeGroupedQM9) or isinstance(train_set, SizeGroupedZINC):
         test_loaders = [dataloader(test_set)]
     else:
         raise TypeError(f"Expected Dataset or list, got {type(test_set)} instead.")
@@ -207,23 +210,48 @@ def get_zinc(args: Union[Namespace, ConfigDict]):
     if extra_path is not None:
         data_path = os.path.join(data_path, extra_path)
 
-    train_set = ZINC(data_path,
-                     split='train',
-                     subset=True,
-                     transform=None,
-                     pre_transform=pre_transform)
+    dataset_lists = dict()
 
-    val_set = ZINC(data_path,
-                   split='val',
-                   subset=True,
-                   transform=None,
-                   pre_transform=pre_transform)
+    for split in ['train', 'val', 'test']:
 
-    test_set = ZINC(data_path,
-                    split='test',
-                    subset=True,
-                    transform=None,
-                    pre_transform=pre_transform)
+        if args.downstream_model == 'PPGN':
+            dataset = SizeGroupedZINC(data_path,
+                          split=split,
+                          transform=None,
+                          pre_transform=pre_transform,
+                            subset=True,
+                                     )
+        else:
+            dataset = ZINC(data_path,
+                          split=split,
+                          transform=None,
+                          pre_transform=pre_transform,
+                            subset=True
+                          )
+
+        dataset_lists[split] = dataset
+
+    # train_set = ZINC(data_path,
+    #                  split='train',
+    #                  subset=True,
+    #                  transform=None,
+    #                  pre_transform=pre_transform)
+    #
+    # val_set = ZINC(data_path,
+    #                split='val',
+    #                subset=True,
+    #                transform=None,
+    #                pre_transform=pre_transform)
+    #
+    # test_set = ZINC(data_path,
+    #                 split='test',
+    #                 subset=True,
+    #                 transform=None,
+    #                 pre_transform=pre_transform)
+
+    train_set = dataset_lists['train']
+    val_set = dataset_lists['val']
+    test_set = dataset_lists['test']
 
     if args.debug:
         train_set = train_set[:16]

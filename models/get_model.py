@@ -79,11 +79,12 @@ def get_model(args, *_args):
                      block_features=args.ppgn_configs.block_features,
                      num_classes=DATASET_FEATURE_STAT_DICT[args.dataset]['num_class'],
                      depth_of_mlp=args.ppgn_configs.depth_of_mlp,
-                     only_downstream=args.only_downstream)
+                     only_downstream=args.only_downstream,
+                     dataset=args.dataset.lower())
 
     # Check if only downstream model is to be used
     if args.only_downstream:
-        return HybridModel(None, model, None)
+        return HybridModel(None, model, None, args.downstream_model, args.only_downstream, args.dataset.lower())
 
     # upstream model
     # not shared with the downstream
@@ -113,6 +114,6 @@ def get_model(args, *_args):
                             args.imle_configs.auxloss
                             if hasattr(args.imle_configs, 'auxloss') else None)
 
-    hybrid_model = HybridModel(emb_model, model, rewiring,
+    hybrid_model = HybridModel(emb_model, model, rewiring, args.downstream_model, args.only_downstream, args.dataset.lower()
                                )
     return hybrid_model

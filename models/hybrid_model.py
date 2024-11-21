@@ -8,22 +8,28 @@ class HybridModel(torch.nn.Module):
     def __init__(self,
                  upstream: torch.nn.Module,
                  downstream: torch.nn.Module,
-                 rewiring: Callable):
+                 rewiring: Callable,
+                 downstream_model: str,
+                 only_downstream: bool,
+                 dataset_name: str):
         super(HybridModel, self).__init__()
         self.upstream = upstream
         self.downstream = downstream
         self.rewiring = rewiring
+        self.downstream_model = downstream_model
+        self.only_downstream = only_downstream
+        self.dataset_name = dataset_name
 
     def forward(self, data):
         """
         Forward pass for the model, handling both downstream and rewiring cases.
         """
         # Determine if PPGN processing is required
-        is_ppgn = hasattr(data, 'distance_mat')
+        is_ppgn = self.downstream_model == 'PPGN'
         add_edge_weight = self.upstream is not None or self.rewiring is not None
 
         # Process data into tensor format if PPGN is used
-        down_data = ppgn_tensor(data, add_edge_weight=add_edge_weight) if is_ppgn else data
+        down_data = ppgn_tensor(data, self.dataset_name, add_edge_weight=add_edge_weight) if is_ppgn else data
 
         # If no upstream or rewiring, only use downstream model
         if self.upstream is None and self.rewiring is None:
@@ -43,7 +49,7 @@ class HybridModel(torch.nn.Module):
         if is_ppgn:
             assert hasattr(new_data[0], 'edge_weight') and new_data[0].edge_weight is not None, \
                 "Rewired data must have edge weights for PPGN."
-            new_data_down = ppgn_tensor(new_data[0], add_edge_weight=True)
+            new_data_down = ppgn_tensor(new_data[0], self.dataset_name, add_edge_weight=True)
         else:
             new_data_down = new_data
 

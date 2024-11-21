@@ -2,7 +2,7 @@ from torch import nn
 
 
 DATASET_FEATURE_STAT_DICT = {
-    'zinc': {'node': 21, 'edge': 4, 'num_class': 1},  # regression
+    'zinc': {'node': 21, 'edge': 4, 'num_class': 1, 'ppgn_base_dims': 25},  # regression  # 29 for ppgn when eigenvalues are added
     'zinc_full': {'node': 28, 'edge': 3, 'num_class': 1},
     'mutag': {'node': 7, 'edge': 4, 'num_class': 1},  # bin classification
     'alchemy': {'node': 6, 'edge': 4, 'num_class': 12},  # regression, but 12 labels
@@ -19,8 +19,8 @@ DATASET_FEATURE_STAT_DICT = {
     'ogbg-molhiv': {'node': 9, 'edge': 3, 'num_class': 1},  # regression
     'ogbg-moltox21': {'node': 9, 'edge': 3, 'num_class': 12},  # binary classification, but 12 tasks
     'qm9': {'node': 15, 'edge': 4, 'num_class': 1},  # regression, 13 labels, but we train 1 each split
-    'qm9_pos': {'node': 13, 'edge': 4, 'num_class': 1},  # regression, 13 labels, but we train 1 each split
-    'ppgnqm9': {'node': 13, 'edge': 4, 'num_class': 1},  # regression, 13 labels, but we train 1 each split
+    'qm9_pos': {'node': 13, 'edge': 4, 'num_class': 1, 'ppgn_base_dims': 19},  # regression, 13 labels, but we train 1 each split
+    # 'ppgnqm9': {'node': 13, 'edge': 4, 'num_class': 1},  # regression, 13 labels, but we train 1 each split
     'exp': {'node': 2, 'edge': 0, 'num_class': 1},  # bin classification
     'csl': {'node': 1, 'edge': 1, 'num_class': 10},
 

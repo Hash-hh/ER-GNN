@@ -2,18 +2,22 @@ import torch
 import torch.nn as nn
 import models.ppgn.layers as layers
 import models.ppgn.modules as modules
+from data.const import DATASET_FEATURE_STAT_DICT
 
 
 class PPGN(nn.Module):
-    def __init__(self, use_new_suffix, block_features, num_classes, depth_of_mlp, only_downstream):
+    def __init__(self, use_new_suffix, block_features, num_classes, depth_of_mlp, only_downstream, dataset):
         """
         Build the model computation graph, until scores/values are returned at the end
         """
         super().__init__()
 
+        # Determine number of features in the input
+        ppgn_base_dims = DATASET_FEATURE_STAT_DICT[dataset]['ppgn_base_dims']
+
         self.use_new_suffix = use_new_suffix  # True or False
         self.block_features = block_features  # List of number of features in each regular block
-        original_features_num = 19 if only_downstream else 2*20  # Number of features of the input
+        original_features_num = ppgn_base_dims if only_downstream else 2*(ppgn_base_dims+1)  # Number of features of the input
 
         # First part - sequential mlp blocks
         last_layer_features = original_features_num

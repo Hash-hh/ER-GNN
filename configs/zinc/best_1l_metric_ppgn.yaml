@@ -6,8 +6,13 @@ fixed:
   wandb_project: "experiment"
   wandb_name: "name"
 
-  downstream_model: GNN  # change from GNN to PPGN
+  downstream_model: PPGN  # change from GNN to PPGN
   only_downstream: False  # without the rewiring
+
+  ppgn_configs:
+    block_features: [ 400,400,400 ]
+    depth_of_mlp: 2
+    use_new_suffix: True
 
   sample_configs:
     separate: False
@@ -15,13 +20,13 @@ fixed:
     sample_k: 80   # edge addition
     sample_k2: 20   # edge deletion
     candid_pool: 100
-    ensemble: 5
+    ensemble: 2
     heuristic: longest_path
     include_original_graph: True
 
   imle_configs:
     num_train_ensemble: 1
-    num_val_ensemble: 5
+    num_val_ensemble: 2
 
     emb_hid_size: 64
     gnn_layer: 8
@@ -33,11 +38,11 @@ fixed:
 #    layers: 2
 #    dim_pe: 16
 #    raw_norm_type: 'BatchNorm'
-  lap:
-    max_freqs: 4
-    dim_pe: 16
-    layers: 2
-    raw_norm_type: null
+#  lap:
+#    max_freqs: 4
+#    dim_pe: 16
+#    layers: 2
+#    raw_norm_type: null
 
   hid_size: 256
   lr: 1.e-3
@@ -56,9 +61,9 @@ fixed:
   dropout: 0.
   bn: True
   residual: True
-  batch_size: 128
+  batch_size: 32
   min_epochs: 400
   max_epochs: 1000
   data_path: './datasets'
-  debug: True
-  num_runs: 3
+  debug: False
+  num_runs: 1
